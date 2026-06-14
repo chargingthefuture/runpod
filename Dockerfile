@@ -1,18 +1,22 @@
 # RunPod Serverless worker that serves an Ollama model behind RunPod's job API.
 #
-# Point a RunPod Serverless endpoint's GitHub build at this Dockerfile
-# (Dockerfile path: ctf/ops/runpod-ollama/Dockerfile). The web app talks to the
-# endpoint via lib/chatbot/ollama.ts when OLLAMA_BASE_URL is the endpoint URL
+# The web app (chargingthefuture/chargingthefuture) talks to the endpoint via
+# lib/chatbot/ollama.ts when OLLAMA_BASE_URL is the endpoint URL
 # (https://api.runpod.ai/v2/<id>) and OLLAMA_API_KEY is the RunPod API key.
-#
 # The handler is written inline (no COPY) so the build does not depend on
-# RunPod's build-context root. See ctf/docs/developer/OLLAMA.md.
+# RunPod's build-context root.
 
 FROM ollama/ollama:latest
 
-RUN apt-get update && apt-get install -y python3 python3-pip \
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv \
     && rm -rf /var/lib/apt/lists/*
-RUN pip3 install --no-cache-dir runpod requests
+# The base image's system Python is "externally managed" (PEP 668), so a
+# system-wide `pip install` is refused and the build fails. Install the handler's
+# dependencies into a virtual environment instead, and put it first on PATH so the
+# CMD's python3 resolves to it.
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir runpod requests
 
 # Bake the model into the image so a cold start does not also pay a model
 # download. qwen2.5:32b (~20 GB quantized) fits a 24 GB GPU; override with
