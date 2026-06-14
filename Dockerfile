@@ -6,9 +6,11 @@
 # The handler is written inline (no COPY) so the build does not depend on
 # RunPod's build-context root.
 
-# Pin the base image to an immutable release tag (not `latest`) so builds are
-# reproducible. Bump deliberately when adopting a newer Ollama.
-FROM ollama/ollama:0.30.8
+# Pin the base image by digest (not the mutable `latest` or even the `0.30.8`
+# tag, which the publisher can retarget) so builds are byte-for-byte
+# reproducible. The digest is the multi-arch manifest list for 0.30.8; bump both
+# the tag and digest together when adopting a newer Ollama.
+FROM ollama/ollama:0.30.8@sha256:05b6fe5143ed006d6d4abd39bdd575f962a5822bdf81e6fbb5e6894eb984ab9c
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip python3-venv \
     && rm -rf /var/lib/apt/lists/*
